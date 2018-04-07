@@ -9,6 +9,11 @@
 #define CHAR_TO_INDEX(c) ((int)c - (int)'a')
 
 TrieNode* get_doc_Node(void){
+    /*******************************************************************
+    * DESCRIPTION : Retuns an initialized doc_trie node
+    * 
+    */
+
     TrieNode *temp = (TrieNode*) malloc(sizeof(TrieNode));
     temp -> children = (TrieNode**) malloc(ALPHABET_SIZE * sizeof(TrieNode*));
  
@@ -24,6 +29,16 @@ TrieNode* get_doc_Node(void){
 }
  
 TrieNode* doc_insert(TrieNode *root, char *key){
+    /*******************************************************************
+    * DESCRIPTION : Insert a node into the the doc_trie
+    * INPUT :     
+    *           [1] root: Pointer to the root of doc_trie.
+    *           [2] Other arguments are self explainatory.
+    * OUTPUT :
+    *           [1] Returns pointer to the root of the doc_trie.
+    * 
+    */
+
     int depth, len = strlen(key), index;
  
     TrieNode *iter = root;
@@ -42,6 +57,15 @@ TrieNode* doc_insert(TrieNode *root, char *key){
 }
  
 bool doc_search(struct TrieNode *root, const char *key){
+    /*******************************************************************
+    * DESCRIPTION : Search a key in the trie
+    * INPUT :     
+    *           [1] root: Pointer to the root of doc_trie.
+    *           [2] key : key that needs to be searched.
+    *  OUTPUT :
+    *           [1] Returns a boolean 
+    */
+
     int depth, len = strlen(key), index;
     TrieNode* iter = root;
  
@@ -55,6 +79,7 @@ bool doc_search(struct TrieNode *root, const char *key){
     printf("%d\n", iter->frequency);
     return (iter != NULL && iter -> end);
 }
+
 
 // int main(){
 //     // Input keys (use only 'a' through 'z' and lower case)

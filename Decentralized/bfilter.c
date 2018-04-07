@@ -53,13 +53,19 @@ uint32_t murmurhash (const char *key, uint32_t len, uint32_t seed) {
     return h % DOMAIN;
 }
 
-unsigned long* getVector()
-{
+unsigned long* getVector(){
     return (unsigned long*) calloc( FILTER_SIZE, sizeof(unsigned long));
 }
 
-unsigned long* addB(char *key, unsigned long* vector)
-{  
+unsigned long* addB(char *key, unsigned long* vector){  
+    /*******************************************************************
+    * DESCRIPTION : Add key into the bloom filter
+    * INPUT :
+    *           [1] key : key to be added
+    *           [2] vector : Pointer of the Bloom filter 
+    * OUTPUT :
+    *           [1] Returns Pointer to the updated bloom filter
+    */
     int i = 0;
     uint32_t h,d,k,m;
     int a[] = {893,991,567,169,459,251,546,41};
@@ -78,8 +84,15 @@ unsigned long* addB(char *key, unsigned long* vector)
     return vector;
 }
 
-bool searchB(char *key, unsigned long* vector)
-{  
+bool searchB(char *key, unsigned long* vector){
+    /*******************************************************************
+    * DESCRIPTION : Search key in the bloom filter
+    * INPUT :
+    *           [1] key : key to be searched
+    *           [2] vector : Pointer of the Bloom filter 
+    * OUTPUT :
+    *           [1] Returns a boolean
+    */
     int i = 0;
     uint32_t h,d,k,m;
     int a[] = {893,991,567,169,459,251,546,41};

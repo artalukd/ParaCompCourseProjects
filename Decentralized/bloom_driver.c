@@ -13,9 +13,10 @@ void indexing();
 void decompose_domain(int domain_size, int world_rank, int world_size, int* subdomain_start, int* subdomain_end) {
     /*******************************************************************
     * DESCRIPTION : Assign the subdomain to given process
-    * NOTES:     
-    *           [1] Argument domain_size: Size of the over all domain (In this case value of filecount)
-    *
+    * INPUT:     
+    *           [1] domain_size: Size of the over all domain (In this case value of filecount)
+    *           [2] Other arguments are self explainatory.
+    * 
     */
 
     *subdomain_start = (int) (domain_size / world_size )  * world_rank;    
@@ -28,7 +29,13 @@ void decompose_domain(int domain_size, int world_rank, int world_size, int* subd
 }
 
 
-int main(){
+int main(int argc, char* argv[]){
+    /*******************************************************************
+    * DESCRIPTION : Main function 
+    * NOTE : 
+    *           [1] clus_root contains the final Global Trie.
+    * 
+    */
 
     MPI_Init(NULL, NULL);
     int world_size;
@@ -37,8 +44,14 @@ int main(){
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
     TrieNode** clus_root;
-    // char* folder_name = "/home/shyamal/corpora/rt/training";
-    char* folder_name = "/home/mpiuser/reuters/training";
+    char* folder_name;
+    if(argc > 1 )
+        folder_name = argv[1];
+    else{ 
+        printf("Kindly provide path to the dataset as argument");
+        return -1;
+    }
+
     char* query_folder = "/home/mpiuser/query";
 
     indexing(clus_root, folder_name, query_folder,  world_rank, world_size);
@@ -50,10 +63,12 @@ int main(){
 
 void indexing(TrieNode** clus_root, char* folder_name,  char* query_folder , int world_rank, int world_size){
 
+    // Getting path of the files 
     int file_count;
     char** old_file_list = list_dir(folder_name, &file_count);
     char** file_list = append_paths(folder_name, old_file_list, file_count);
 
+    // Getting queries
     int query_count;
     char** query_list = list_dir(query_folder, &query_count);
     query_list = append_paths(query_folder, query_list, query_count);
@@ -62,25 +77,31 @@ void indexing(TrieNode** clus_root, char* folder_name,  char* query_folder , int
     decompose_domain(file_count, world_rank, world_size, &subdomain_start, &subdomain_end);
 
     int i;
+
+    // Initilize varibles used in the document reading        
     buffer b = (buffer) malloc(4096 * sizeof(char));
     buffer word_buffer;
-    
     int k = 4096;
     memset(b, 0, k);
 
+    // Initialization of Global Trie
     *clus_root = get_clus_Node();
 
+    // Initialization of Bloom Filter
     unsigned long* bloom = getVector();
 
+    // Reading Stopwords and storing them into the list_of_stopwords
     FILE* fptr = fopen("stopwords", "r");
+    if(fptr == NULL){
+        printf("StopWord File can not be opened.\n");
+        return -1;
+    }
     int num_stop;
     char** list_of_words = read_arr(fptr, &num_stop);
     fclose(fptr);
-    // printf("%d", num_stop);
 
-    // printf("%d\n", subdomain_start);
+    // Processing files from the range of [subdomain_start, subdomain_end) of the file_list
     for(i = subdomain_start; i < subdomain_end ; i ++){
-        // printf("%d : %s\n", world_rank ,file_list[i]);
         FILE* fp = fopen(file_list[i], "r");
         if(!fp){
             perror("");
@@ -88,15 +109,17 @@ void indexing(TrieNode** clus_root, char* folder_name,  char* query_folder , int
             exit(1);
         }
 
+        // Initilization of doc level trie
         TrieNode* doc_root = get_doc_Node();
+
+        // Initialization realted to reading doc                
         offset = 0;
         memset(b, 0, k);
-        // memset(word_buffer, 0, 25);
         eof = false;
 
+        // Reading the doc and adding all the words into the doc level trie. 
         while(1){
             word_buffer = getWord(fp, b, k);
-            word_buffer = convert_to_lower(word_buffer);
             if(search(list_of_words, word_buffer, 0, num_stop - 1) == 1){
                 free(word_buffer);   
                 continue;  
@@ -112,37 +135,31 @@ void indexing(TrieNode** clus_root, char* folder_name,  char* query_folder , int
         doc_free(doc_root);
     }
 
+    // Gathering all the bloom filters at all the locations.
     unsigned long* all_blooms = (unsigned long*) malloc(FILTER_SIZE * world_size * sizeof(unsigned long));
     MPI_Allgather(bloom, FILTER_SIZE, MPI_UNSIGNED_LONG, all_blooms, FILTER_SIZE, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
 
-    int max_deser = 40 * (file_count - ((file_count / world_size )  * (world_size - 1))) + 60;
 
+    int max_deser = 40 * (file_count - ((file_count / world_size )  * (world_size - 1))) + 60;
+    char* deser_data = (char*) calloc(max_deser, sizeof(char));
+
+    // Initialization related to Round Robin master slave model
     int master = 0;
     int finish = 0;
-   
-    // corrusponding to master
-    // char* fname = (char*) calloc(20, sizeof(char));
-    // sprintf(fname, "./query%d.in", world_rank);
-    // printf("%d :: %s\n", world_rank, query_list[world_rank]);
-    
-    FILE* fpt = fopen(query_list[world_rank], "r");
-
     int who[world_size];
+    List** all_lists = (List**) malloc(world_size * sizeof(List*));
+    List* Final_list;
+    int finish_words = 0, remaining_cycle_work = 0;
 
     i = 0;
     
-    char* deser_data = (char*) calloc(max_deser, sizeof(char));
-
-    List** all_lists = (List**) malloc(world_size * sizeof(List*));
-    List* Final_list;
-
+    // Reading queries
     int num_words;
+    FILE* fpt = fopen(query_list[world_rank], "r");
     char** all_words = read_arr(fpt, &num_words);
     fclose(fpt);
 
-    int finish_words = 0, remaining_cycle_work = 0;
-
-    // corrusponding to slave
+    // Initialization corresponding to slave
     char* query = (char*) malloc(140 * sizeof(char));
     int size2, iter2;
     char* str2;
@@ -153,6 +170,7 @@ void indexing(TrieNode** clus_root, char* folder_name,  char* query_folder , int
 
     while(!finish){
         MPI_Barrier(MPI_COMM_WORLD);
+
         // MASTER NODE
         if(world_rank == master){
             remaining_cycle_work = 10;
@@ -162,21 +180,21 @@ void indexing(TrieNode** clus_root, char* folder_name,  char* query_folder , int
                 Final_list = create_list();
                 memset(who, 0, world_size * sizeof(int));
 
+                // Finding the nodes which may contain the query according the bloom filter
                 for(i = 0; i < world_size; i++ ){
                     if(i != world_rank){
                         who[i] = searchB(word_buffer, all_blooms + i * FILTER_SIZE);
                     }
                 }
 
+                // Sending the query to each of the nodes
                 for(i = 0; i < world_size; i++){
                     if(who[i]){
-                        // printf("Sending: %s :: process - %d :: present - %d\n", word_buffer, world_rank, who[i]);
                         MPI_Send(word_buffer, strlen(word_buffer) + 1, MPI_CHAR, i, 1, MPI_COMM_WORLD);
                     }
                 }
-
-
                 
+                // Searching the query in it's own index.                
                 if(searchB(word_buffer, all_blooms + world_rank * FILTER_SIZE)){
                     List* lst = clus_search(*clus_root, word_buffer);
                     if(lst){
@@ -184,20 +202,17 @@ void indexing(TrieNode** clus_root, char* folder_name,  char* query_folder , int
                     }
                 }
 
+                // Receiving input from each of the nodes
                 for(i = 0; i < world_size; i++){
                     if(who[i]){
-                        // MPI_Status* status;
-                        // printf("Recieving :: %s :: process - %d :: present - %d\n", word_buffer, world_rank, who[i]);
                         MPI_Recv(deser_data, max_deser, MPI_CHAR, i, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                        // printf("Recieved :: %s :: process - %d :: present - %d\n", deser_data, world_rank, who[i]);
-                        // printf("%d ::  %s\n",i , deser_data);
                         iter2 = 0;
                         all_lists[i] = deserialize_list(&deser_data, &iter2);
                         memset(deser_data, 0,max_deser );
                     }
                 }
                 
-                
+                // Merging all the lists.                
                 for(i=0; i< world_size; i++){
                     if(who[i]){
                         Final_list = mergeLists(Final_list, all_lists[i]);
@@ -205,17 +220,13 @@ void indexing(TrieNode** clus_root, char* folder_name,  char* query_folder , int
                 }
                 printf("Process %d ::  :: %s\n",world_rank, word_buffer);
                 print_list(Final_list);
-                // free(Final_list);
                 
-                // ADD MASTER ARRAY .
-
+                // Finishing work condintion of master
                 if(finish_words >= num_words){
                     strcpy(word_buffer, "$");
                     for(i = 0; i < world_size; i++ ){
                         if(i != world_rank){
-                            // printf("Ending :: %s :: process - %d \n", word_buffer, world_rank);
                             MPI_Send(word_buffer, strlen(word_buffer) + 1, MPI_CHAR, i, 1, MPI_COMM_WORLD);
-                            // printf("Ended :: %s :: process - %d \n", word_buffer, world_rank);
                         }
                     }
 
@@ -236,13 +247,12 @@ void indexing(TrieNode** clus_root, char* folder_name,  char* query_folder , int
                     break;
                 }
                 
+                // Breaking condition of the loop and transffering the master access to the next node
                 if( ! remaining_cycle_work ) {
                     strcpy(word_buffer, "!");
                     for(i = 0; i < world_size; i++ ){
                         if(i != world_rank){
-                            // printf("Ending :: %s :: process - %d \n", word_buffer, world_rank);
                             MPI_Send(word_buffer, strlen(word_buffer) + 1, MPI_CHAR, i, 1, MPI_COMM_WORLD);
-                            // printf("Ended :: %s :: process - %d \n", word_buffer, world_rank);
                         }
                     }
                     master = (master + 1) % world_size;
@@ -256,14 +266,16 @@ void indexing(TrieNode** clus_root, char* folder_name,  char* query_folder , int
             while(1){
                 memset(query, 0, 140 * sizeof(char));
                 
+                // Recieve a query from the master                
                 MPI_Recv(query, 140, MPI_CHAR, master, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
                 
-                // printf("Slave : Received :: %s :: process - %d \n", query, world_rank);
-                
+                // Query realted to change of the master.                
                 if(strcmp(query, "!") == 0 ){
                     master = (master + 1) % world_size;
                     break;
                 }
+
+                // Query realted to the end of work of the master.                
                 else if(strcmp(query, "$") == 0 ){
                     pending_master[master] = 0;
                     finish = 1;
@@ -280,6 +292,7 @@ void indexing(TrieNode** clus_root, char* folder_name,  char* query_folder , int
                     break;
                 }
 
+                // Searching the Index for the query.
                 list = clus_search(*clus_root, query);
                 if(list){
                     size2 = max_deser, iter2 = 0;

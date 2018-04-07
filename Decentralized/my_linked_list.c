@@ -4,6 +4,11 @@
 #include "_LINKED_LIST.h"
 
 List* create_list(){
+    /*******************************************************************
+    * DESCRIPTION : Retuns an initialized LinkedList.
+    * 
+    */
+
 	List* temp = (List*) malloc(sizeof(List));
 	if(temp == NULL){
 		return NULL;
@@ -16,6 +21,11 @@ List* create_list(){
 }
 
 Node* create_node(Element* data){
+    /*******************************************************************
+    * DESCRIPTION : Retuns an initialized LinkedList node.
+    * 
+    */
+
 	Node* temp = (Node*) malloc(sizeof(Node));
 	if(temp == NULL){
 		return NULL;
@@ -27,6 +37,15 @@ Node* create_node(Element* data){
 }
 
 List* insert_in_order(List* list, Element* data){
+    /*******************************************************************
+    * DESCRIPTION : Insert a node into the LinkedList.
+    * INPUT :     
+    *           [1] list : Pointer to the head of LinkedList.
+    *           [2] data : data that needs to be inserted.
+    * OUTPUT :
+    *           [1] Returns pointer to the head of the LinkedList.
+    * 
+    */
 	Node* current;
 	Node* new_node = create_node(data);
     if (list -> size == 0){
@@ -52,6 +71,15 @@ List* insert_in_order(List* list, Element* data){
 }
 
 List* add_to_end(List* list, Element* data){
+    /*******************************************************************
+    * DESCRIPTION : Insert a node at the end the LinkedList.
+    * INPUT :     
+    *           [1] list : Pointer to the head of LinkedList.
+    *           [2] data : data that needs to be inserted.
+    * OUTPUT :
+    *           [1] Returns pointer to the head of the LinkedList.
+    * 
+    */
     Node* new_node = create_node(data);
     if(list -> size == 0){
         list -> head = new_node;
@@ -66,6 +94,14 @@ List* add_to_end(List* list, Element* data){
 }
 
 List* delete_from_end(List* list){
+    /*******************************************************************
+    * DESCRIPTION : Deletes a node from the end of the LinkedList.
+    * INPUT :     
+    *           [1] list : Pointer to the head of LinkedList.
+    * OUTPUT :
+    *           [1] Returns pointer to the head of the LinkedList.
+    * 
+    */
 	Node* del_node = list -> tail;
 	Node* temp = list -> head;
 
@@ -90,6 +126,14 @@ List* delete_from_end(List* list){
 }
 
 List* delete_from_front(List* list){
+    /*******************************************************************
+    * DESCRIPTION : Deletes a node from the front of the LinkedList.
+    * INPUT :     
+    *           [1] list : Pointer to the head of LinkedList.
+    * OUTPUT :
+    *           [1] Returns pointer to the head of the LinkedList.
+    * 
+    */
 	Node* del_node = list -> head;
 
 	if(list -> size == 0){
@@ -108,6 +152,14 @@ List* delete_from_front(List* list){
 }
 
 bool is_empty(List* list){
+    /*******************************************************************
+    * DESCRIPTION : Check the whether the list is empty
+    * INPUT :     
+    *           [1] list : Pointer to the head of LinkedList.
+    * OUTPUT :
+    *           [1] Returns a boolean
+    * 
+    */
 	if(list -> size == 0){
 		return true;
 	}else{
@@ -116,6 +168,12 @@ bool is_empty(List* list){
 }
 
 void print_list(List* list){
+    /*******************************************************************
+    * DESCRIPTION : Prints the LinkedList
+    * INPUT :     
+    *           [1] list : Pointer to the head of LinkedList.
+    * 
+    */
 	Node* temp = list -> head;
 	while(temp != NULL){
 		printf("%d::%s\n", temp -> ele -> frequency, temp -> ele -> doc_name);
@@ -125,6 +183,15 @@ void print_list(List* list){
 }
 
 List* mergeLists(List* list1, List* list2){
+    /*******************************************************************
+    * DESCRIPTION : Merge two LinkedList such that they remain in sorted order
+    * INPUT :     
+    *           [1] list1 : Pointer to the head of first LinkedList.
+    *           [1] list2 : Pointer to the head of second LinkedList.
+    * OUTPUT :
+    *           [1] Returns pointer to the head of the merged LinkedList.
+    * 
+    */
     List* ret = create_list();
     Node* iter1 = list1 -> head;
     Node* iter2 = list2 -> head;
@@ -185,6 +252,14 @@ List* mergeLists(List* list1, List* list2){
 }
 
 List* copy_list(List* list){
+    /*******************************************************************
+    * DESCRIPTION : Make a copy of the linkedlist
+    * INPUT :     
+    *           [1] list : Pointer to the head of first LinkedList.
+    * OUTPUT :
+    *           [1] Returns pointer to the head of the copied LinkedList.
+    * 
+    */
     List* ret_list = create_list();
     Node* temp = list -> head;
     while(temp != NULL){

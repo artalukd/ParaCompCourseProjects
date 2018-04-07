@@ -7,6 +7,10 @@
 #define ARRAY_SIZE(a) sizeof(a)/sizeof(a[0])
  
 TrieNode* get_clus_Node(void){
+    /*******************************************************************
+    * DESCRIPTION : Retuns an initialized clus_trie node
+    * 
+    */
     TrieNode *temp = (TrieNode*) malloc(sizeof(TrieNode));
     temp -> children = (TrieNode**) malloc(ALPHABET_SIZE * sizeof(TrieNode*));
 
@@ -23,8 +27,16 @@ TrieNode* get_clus_Node(void){
 }
  
 TrieNode* clus_insert(TrieNode *root, char *key, unsigned int frequency, char* doc_name){
+    /*******************************************************************
+    * DESCRIPTION : Insert a node into the the clus_trie
+    * INPUT :     
+    *           [1] root: Pointer to the root of clus_trie.
+    *           [2] Other arguments are self explainatory.
+    * OUTPUT :
+    *           [1] Returns pointer to the root of the clus_trie.
+    * 
+    */
     int depth, len = strlen(key), index;
-    //root -> frequency += frequency;
  
     TrieNode *iter = root;
  
@@ -35,7 +47,6 @@ TrieNode* clus_insert(TrieNode *root, char *key, unsigned int frequency, char* d
         } 
         iter = iter -> children[index];
     }
-    // iter -> frequency += frequency;
     iter -> end = true;
 
     Element* temp = (Element*) malloc(sizeof(Element));
@@ -47,6 +58,15 @@ TrieNode* clus_insert(TrieNode *root, char *key, unsigned int frequency, char* d
 }
  
 List* clus_search(struct TrieNode *root, const char *key){
+    /*******************************************************************
+    * DESCRIPTION : Search a key in the trie
+    * INPUT :     
+    *           [1] root: Pointer to the root of clus_trie.
+    *           [2] key : key that needs to be searched.
+    * OUTPUT :
+    *           [1] Returns a the list correspoding to the key
+    */
+
     int depth, len = strlen(key), index;
     TrieNode* iter = root;
  
@@ -57,21 +77,14 @@ List* clus_search(struct TrieNode *root, const char *key){
         }
         iter = iter -> children[index];
     }
-    // print_list(iter -> list);
     return copy_list(iter -> list);
 }
 
-char* convert_to_lower(char* str){
-    int i;
-    for(i = 0; str[i] != '\0'; i++){
-        if(str[i] >= 'A' && str[i] <= 'Z'){
-            str[i] += 'a' - 'A';
-        }
-    }
-    return str;
-}
-
 char index_to_char(int index){
+    /*******************************************************************
+    * DESCRIPTION : Returns index'th character
+    * 
+    */
     return index + 'a';
 }
 

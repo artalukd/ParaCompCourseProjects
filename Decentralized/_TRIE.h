@@ -41,8 +41,6 @@ List* clus_search(struct TrieNode *root, const char *key);
 
 TrieNode* cluster_merge(TrieNode *croot1,TrieNode *croot2);
 
-char* convert_to_lower(char* str);
-
 TrieNode * insert_doc_in_clus(TrieNode *croot, TrieNode *droot, char* doc_name );
 
 void serialize_trie(TrieNode* root, char** fp1, char** fp2, int child_index, int* fp1_count, int* fp2_count, int* fp1_size, int* fp2_size);

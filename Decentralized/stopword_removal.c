@@ -5,6 +5,14 @@
 #include "_TOKENIZER.h"
 
 char** read_arr(FILE* fptr, int* size){
+    /*******************************************************************
+    * DESCRIPTION : Reading the stopword file
+    * INPUT :     
+    *           [1] fptr : File pointer.
+    *           [2] size : Pointer to the size array being returned.
+    * OUTPUT : 
+    *           [1] Returns an array of strings
+    */
 
     *size = 32;
     char* temp = (char*) malloc(25 * sizeof(char));
@@ -34,7 +42,14 @@ char** read_arr(FILE* fptr, int* size){
 }
 
 bool search(char** arr, char* key, int lo, int hi){
-
+    /*******************************************************************
+    * DESCRIPTION : Checking for the existance of the key in the array
+    * INPUT :     
+    *           [1] fp : Pointer to the string that stores the serialized LinkedList.
+    *           [2] fp_count : Pointer to the size of fp.
+    * OUTPUT : 
+    *           [1] Returns a boolean.
+    */
     int what;
     while(lo <= hi){
         int mid = (lo + hi)/2;
