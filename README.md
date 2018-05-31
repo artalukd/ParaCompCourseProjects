@@ -21,5 +21,5 @@
 
 # Dependencies
 
-- MPICH2/OpenMPI
+- MPICH2 / OpenMPI
 - gcc 5.4.0
